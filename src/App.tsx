@@ -8,14 +8,12 @@ import {
 
 function App() {
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <Routes>
-        <Route path='/' element={<LoginPage />} />
-        <Route path='/verification' element={<VerificationPage />} />
-        <Route path='/confirmation' element={<ConfirmationPage />} />
-        <Route path='*' element={<NotFoundPage />} />
-      </Routes>
-    </div>
+    <Routes>
+      <Route path='/' element={<LoginPage />} />
+      <Route path='/verification' element={<VerificationPage />} />
+      <Route path='/confirmation' element={<ConfirmationPage />} />
+      <Route path='*' element={<NotFoundPage />} />
+    </Routes>
   );
 }
 
