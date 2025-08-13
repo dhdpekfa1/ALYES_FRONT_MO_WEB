@@ -11,8 +11,8 @@ export const LoginPage = () => {
 
   return (
     <div className='min-h-dvh w-full flex flex-col justify-between lg:justify-center'>
-      <div className='w-full sm:max-w-xl lg:max-w-lg lg:mx-auto p-4'>
-        <div className='flex flex-col gap-4'>
+      <div className='w-full sm:max-w-xl lg:max-w-lg lg:mx-auto'>
+        <div className='flex flex-col gap-4 p-4'>
           <div className='flex gap-2 items-end'>
             <h1 className='italic text-green-500 text-4xl font-black'>
               ONE-pass
@@ -29,7 +29,7 @@ export const LoginPage = () => {
           </p>
         </div>
 
-        <div className='mt-4 flex flex-col gap-4'>
+        <div className='mt-4 flex flex-col gap-4  p-4'>
           <LabelInput
             label='회원 이름'
             placeholder='회원 이름을 입력해주세요.'
