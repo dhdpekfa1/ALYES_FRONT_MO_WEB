@@ -55,7 +55,7 @@ export const VerificationPage = () => {
         </div>
       </div>
 
-      <div className='button-shadow-container w-full lg:max-w-lg lg:mx-auto '>
+      <div className='button-shadow-container w-full lg:max-w-lg lg:mx-auto'>
         <Button
           title='출결 여부 전송'
           variant='primary'

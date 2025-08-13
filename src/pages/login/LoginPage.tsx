@@ -43,7 +43,7 @@ export const LoginPage = () => {
         </div>
       </div>
 
-      <div className='button-shadow-container w-full lg:max-w-lg lg:mx-auto '>
+      <div className='button-shadow-container w-full lg:max-w-lg lg:mx-auto'>
         <Button
           title='확인'
           variant='primary'
