@@ -1,23 +1,15 @@
-import type { TGetStudentFind } from '.';
+import { type TGetStudentFind, getStudentFind } from '.';
 import { parseData, useGetMutation } from '@/shared/api/lib';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import type { TApiResponse } from '@/shared/api/model';
 import { z } from 'zod';
 
-/** 사용자 인증 - mutation 방식 */
-export const useGetStudentFind = (
-  options?: UseMutationOptions<
-    TApiResponse<TGetStudentFind>,
-    Error,
+/** 사용자 인증 */
+export const useGetStudentFind = () =>
+  useGetAuthMutation<
+    TGetStudentFind['result'],
     { name: string; phone: string }
-  >,
-) => {
-  return useGetAuthMutation<TGetStudentFind, { name: string; phone: string }>(
-    `/api/student/find/name-and-phone`,
-    {} as z.ZodSchema<TGetStudentFind>, // 실제 스키마가 있다면 그것을 사용하세요
-    options,
-  );
-};
+  >('/api/student/find/name-and-phone', getStudentFind.shape.result);
 
 export const useGetAuthMutation = <TParsed, TRequest extends object>(
   url: string,

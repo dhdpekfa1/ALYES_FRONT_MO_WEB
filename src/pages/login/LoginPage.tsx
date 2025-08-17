@@ -19,34 +19,50 @@ export const LoginPage = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const { mutate, isPending } = useGetStudentFind({
-    onSuccess: data => {
-      console.log('학생 정보:', data);
-      toast({
-        title: '인증 성공',
-        description: '학생 정보를 확인했습니다.',
-      });
-      navigate('/verification');
-    },
-    onError: error => {
-      console.error('학생 조회 실패:', error);
-      toast({
-        variant: 'destructive',
-        title: '인증 실패',
-        description: '일치하는 학생 정보를 찾을 수 없습니다.',
-      });
-      setError('root', {
-        type: 'manual',
-        message: '일치하는 학생 정보를 찾을 수 없습니다. 다시 확인해주세요.',
-      });
-    },
-  });
+  const { mutate, isPending } = useGetStudentFind();
 
   const onSubmit = (data: LoginForValues) => {
-    mutate({
-      name: data.name.trim(),
-      phone: data.phone.trim(),
-    });
+    mutate(
+      {
+        name: data.name.trim(),
+        phone: data.phone.trim(),
+      },
+      {
+        onSuccess: data => {
+          if (
+            !data ||
+            !data.result ||
+            !data.result ||
+            data.result.length === 0
+          ) {
+            toast({
+              variant: 'destructive',
+              title: '인증 실패',
+              description: '일치하는 학생 정보를 찾을 수 없습니다.',
+            });
+            return;
+          }
+
+          toast({
+            title: '인증 성공',
+            description: '학생 정보를 확인했습니다.',
+          });
+          navigate('/verification');
+        },
+        onError: () => {
+          toast({
+            variant: 'destructive',
+            title: '인증 실패',
+            description: '일치하는 학생 정보를 찾을 수 없습니다.',
+          });
+          setError('root', {
+            type: 'manual',
+            message:
+              '일치하는 학생 정보를 찾을 수 없습니다. 다시 확인해주세요.',
+          });
+        },
+      },
+    );
   };
 
   return (
