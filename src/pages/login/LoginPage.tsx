@@ -4,11 +4,11 @@ import { useGetStudentFind } from '@/entities/student/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type LoginForValues, loginSchema } from '@/entities/student/model';
-
-// TODO: shadcn toast 사용
+import { useToast } from '@/shared/model/hooks';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const {
     register,
@@ -20,10 +20,21 @@ export const LoginPage = () => {
   });
 
   const { mutate, isPending } = useGetStudentFind({
-    onSuccess: () => {
+    onSuccess: data => {
+      console.log('학생 정보:', data);
+      toast({
+        title: '인증 성공',
+        description: '학생 정보를 확인했습니다.',
+      });
       navigate('/verification');
     },
-    onError: () => {
+    onError: error => {
+      console.error('학생 조회 실패:', error);
+      toast({
+        variant: 'destructive',
+        title: '인증 실패',
+        description: '일치하는 학생 정보를 찾을 수 없습니다.',
+      });
       setError('root', {
         type: 'manual',
         message: '일치하는 학생 정보를 찾을 수 없습니다. 다시 확인해주세요.',

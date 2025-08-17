@@ -6,6 +6,7 @@ import {
   VerificationPage,
   ConfirmationPage,
 } from './pages';
+import { Toaster } from '@/shared/ui';
 
 // QueryClient 인스턴스 생성
 const queryClient = new QueryClient({
@@ -30,6 +31,7 @@ function App() {
         <Route path='/confirmation' element={<ConfirmationPage />} />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
+      <Toaster />
     </QueryClientProvider>
   );
 }
