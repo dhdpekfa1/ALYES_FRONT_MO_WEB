@@ -4,6 +4,8 @@ import { apiLogger, styledConsole } from '@/shared/api/lib';
 const isDev = process.env.NODE_ENV === 'development';
 const API_URL = import.meta.env.VITE_API_URL;
 
+console.log('API_URL:', API_URL); // 디버깅용
+
 export const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 5000,

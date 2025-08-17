@@ -1,6 +1,6 @@
 import { getApi } from '@/shared/api/lib';
 import type { TApiResponse } from '@/shared/api/model';
-import type { TGetStudentFind } from './';
+import type { TGetStudentFind } from '.';
 
 export const getStudentFind = ({
   name,
