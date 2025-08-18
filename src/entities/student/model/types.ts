@@ -3,7 +3,7 @@ import {
   shuttleAttendanceStatusEnumSchema,
   shuttleUsageEnumSchema,
 } from '@/shared/api/model';
-import { nameField, phoneField } from './';
+import { nameField, phoneField } from './formField';
 
 export const loginSchema = z.object({
   name: nameField,

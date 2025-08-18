@@ -22,7 +22,8 @@ export const useGetStudentFind = () =>
 export const useGetLessonSearch = (studentId: number, time: string) => {
   const { data, isLoading, isError, isSuccess, ...rest } =
     useFetch<TGetLessonTeacherResponse>(
-      `/api/lesson-student/lesson-search/${studentId}/${time}`,
+      `/api/lesson-student/lesson-search/${studentId}`,
+      { params: { time } },
     );
   const parsedData = parseData<TGetLessonTeacherResponse>({
     data,

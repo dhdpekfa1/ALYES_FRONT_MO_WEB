@@ -1,12 +1,25 @@
-import { Button, Dropdown } from '@/shared/ui';
 import { useState } from 'react';
+import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router';
-import { useGetLessonSearch } from '@/entities/student/api';
+import { Button, Dropdown } from '@/shared/ui';
+import {
+  useGetLessonSearch,
+  usePostShuttleAttendance,
+} from '@/entities/student/api';
+
+/**
+ * id: null - 생성, 해당 id 값 - 수정
+ * status: 출석 - WILL_ATTENDANCE, 결석 - WILL_ABSENT
+ * boardingOrder: 999 고정 사용
+ */
 
 export const VerificationPage = () => {
   const location = useLocation();
   const { studentId } = location.state;
-  const { data } = useGetLessonSearch(studentId, 'TODO: time');
+
+  const today = dayjs().format('YYYY-MM-DD');
+  const { data } = useGetLessonSearch(studentId, today);
+  const { mutate: postShuttleAttendance } = usePostShuttleAttendance();
 
   const [value, setValue] = useState('');
   const navigate = useNavigate();
