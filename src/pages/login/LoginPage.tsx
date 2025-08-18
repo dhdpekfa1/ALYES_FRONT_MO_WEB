@@ -43,6 +43,9 @@ export const LoginPage = () => {
             return;
           }
 
+          // 인증 성공 시 다음 페이지(verification) 접근 가능
+          sessionStorage.setItem('currentStep', '1');
+
           toast({
             title: '인증 성공',
             description: '학생 정보를 확인했습니다.',

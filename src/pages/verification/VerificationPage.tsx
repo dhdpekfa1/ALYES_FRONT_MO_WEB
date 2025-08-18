@@ -31,6 +31,8 @@ export const VerificationPage = () => {
 
   const onPressButton = () => {
     console.log('TODO: 이벤트 구현');
+    // 출석 확인 완료 시 다음 페이지(confirmation) 접근 가능
+    sessionStorage.setItem('currentStep', '2');
     navigate('/confirmation');
   };
 

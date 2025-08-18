@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   LoginPage,
@@ -22,13 +22,44 @@ const queryClient = new QueryClient({
   },
 });
 
+// 단계별 보호된 라우트 컴포넌트
+const ProtectedRoute = ({
+  children,
+  requiredStep,
+}: {
+  children: React.ReactNode;
+  requiredStep: number;
+}) => {
+  const currentStep = parseInt(sessionStorage.getItem('currentStep') || '0');
+
+  if (currentStep < requiredStep) {
+    return <Navigate to='/' replace />;
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Routes>
         <Route path='/' element={<LoginPage />} />
-        <Route path='/verification' element={<VerificationPage />} />
-        <Route path='/confirmation' element={<ConfirmationPage />} />
+        <Route
+          path='/verification'
+          element={
+            <ProtectedRoute requiredStep={1}>
+              <VerificationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/confirmation'
+          element={
+            <ProtectedRoute requiredStep={2}>
+              <ConfirmationPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
       <Toaster />
