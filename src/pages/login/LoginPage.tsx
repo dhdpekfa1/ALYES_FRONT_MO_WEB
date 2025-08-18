@@ -1,17 +1,18 @@
-import { Button, LabelInput } from '@/shared/ui';
 import { useNavigate } from 'react-router';
-import { useGetStudentFind } from '@/entities/student/api';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type LoginForValues, loginSchema } from '@/entities/student/model';
 import { useToast } from '@/shared/model/hooks';
+import { formatPhoneNumber, removeHyphens } from '@/shared/lib';
+import { Button, LabelInput } from '@/shared/ui';
+import { useGetStudentFind } from '@/entities/student/api';
+import { type LoginForValues, loginSchema } from '@/entities/student/model';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
     setError,
@@ -51,7 +52,10 @@ export const LoginPage = () => {
             description: '학생 정보를 확인했습니다.',
           });
           navigate('/verification', {
-            state: { studentId: data.result[0].id },
+            state: {
+              studentId: data.result[0].id,
+              studentName: data.result[0].name,
+            },
           });
         },
         onError: () => {
@@ -95,38 +99,54 @@ export const LoginPage = () => {
           className='mt-4 flex flex-col gap-4 p-4'
         >
           <div className='flex flex-col gap-1'>
-            <LabelInput
-              label='회원 이름'
-              placeholder='회원 이름을 입력해주세요.'
-              size='md'
-              {...register('name')}
+            <Controller
+              name='name'
+              control={control}
+              render={({ field }) => (
+                <LabelInput
+                  label='회원 이름'
+                  placeholder='회원 이름을 입력해주세요.'
+                  size='md'
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputMode='text'
+                  hasError={!!errors.name}
+                  errorMessage={errors.name?.message}
+                />
+              )}
             />
-            {errors.name && (
-              <span className='text-red-500 text-sm'>
-                {errors.name.message}
-              </span>
-            )}
           </div>
 
           <div className='flex flex-col gap-1'>
-            <LabelInput
-              label='학부모 전화 번호'
-              placeholder='학부모 전화 번호를 입력해주세요.'
-              size='md'
-              {...register('phone')}
+            <Controller
+              name='phone'
+              control={control}
+              rules={{
+                required: '전화번호를 입력해주세요.',
+                validate: v =>
+                  v.length === 10 || v.length === 11 || '10~11자리 숫자만 입력',
+              }}
+              render={({ field }) => (
+                <LabelInput
+                  label='학부모 전화 번호'
+                  placeholder='학부모 전화 번호를 입력해주세요.'
+                  size='md'
+                  value={formatPhoneNumber(field.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const raw = e.target.value;
+                    field.onChange(removeHyphens(raw));
+                  }}
+                  onBlur={field.onBlur}
+                  inputMode='numeric'
+                  autoComplete='tel'
+                  maxLength={13}
+                  hasError={!!errors.phone}
+                  errorMessage={errors.phone?.message}
+                />
+              )}
             />
-            {errors.phone && (
-              <span className='text-red-500 text-sm'>
-                {errors.phone.message}
-              </span>
-            )}
           </div>
-
-          {errors.root && (
-            <div className='text-red-500 text-sm text-center'>
-              {errors.root.message}
-            </div>
-          )}
         </form>
       </div>
 
