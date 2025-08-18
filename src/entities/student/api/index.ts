@@ -1,6 +1,10 @@
 export {
   type TGetStudentFindResponse,
   type TGetLessonTeacherResponse,
+  type TPostShuttleAttendanceResponse,
+  type TPostShuttleAttendanceRequest,
+  postShuttleAttendanceResponseSchema,
+  postShuttleAttendanceRequestSchema,
   getStudentFindResponse,
   getLessonTeacherResponseSchema,
 } from './types.ts';

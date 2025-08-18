@@ -177,3 +177,22 @@ export const getLessonTeacherResponseSchema = apiResponseSchema.extend({
   ),
 });
 export type TGetLessonTeacherResponse = z.infer<typeof getStudentFindResponse>;
+
+/** 출석 사전 확인 등록/수정 요청 스키마/타입 */
+export const postShuttleAttendanceRequestSchema = z.array(
+  shuttleAttendance.omit({
+    createdDate: true,
+    modifiedDate: true,
+  }),
+);
+export type TPostShuttleAttendanceRequest = z.infer<
+  typeof postShuttleAttendanceRequestSchema
+>;
+
+/** 출석 사전 확인 등록/수정 응답 스키마/타입 */
+export const postShuttleAttendanceResponseSchema = apiResponseSchema.extend({
+  result: z.array(shuttleAttendance),
+});
+export type TPostShuttleAttendanceResponse = z.infer<
+  typeof postShuttleAttendanceResponseSchema
+>;

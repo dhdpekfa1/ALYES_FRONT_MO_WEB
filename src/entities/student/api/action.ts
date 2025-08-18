@@ -1,10 +1,12 @@
 import {
   type TGetLessonTeacherResponse,
   type TGetStudentFindResponse,
+  type TPostShuttleAttendanceRequest,
+  type TPostShuttleAttendanceResponse,
   getLessonTeacherResponseSchema,
   getStudentFindResponse,
 } from '.';
-import { parseData, useFetch, useGetMutation } from '@/shared/api/lib';
+import { parseData, useFetch, useGetMutation, usePost } from '@/shared/api/lib';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import type { TApiResponse } from '@/shared/api/model';
 import { z } from 'zod';
@@ -33,6 +35,13 @@ export const useGetLessonSearch = (studentId: number, time: string) => {
     ...parsedData,
     ...rest,
   };
+};
+
+/** 출석 사전 확인 등록/수정 */
+export const usePostShuttleAttendance = () => {
+  return usePost<TPostShuttleAttendanceResponse, TPostShuttleAttendanceRequest>(
+    '/api/shuttle-attendance/pre/save',
+  );
 };
 
 export const useGetAuthMutation = <TParsed, TRequest extends object>(
