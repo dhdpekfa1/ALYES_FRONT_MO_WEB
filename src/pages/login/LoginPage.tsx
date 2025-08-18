@@ -37,8 +37,8 @@ export const LoginPage = () => {
           ) {
             toast({
               variant: 'destructive',
-              title: '인증 실패',
-              description: '일치하는 학생 정보를 찾을 수 없습니다.',
+              title: '해당 정보로 등록된 회원이 없습니다.',
+              description: '회원 이름과 학부모 전화번호를 다시 입력해주세요.',
             });
             return;
           }

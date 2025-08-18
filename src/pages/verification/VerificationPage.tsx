@@ -9,9 +9,14 @@ import {
 
 /**
  * id: null - 생성, 해당 id 값 - 수정
- * status: 출석 - WILL_ATTENDANCE, 결석 - WILL_ABSENT
+ * status: 출석 - WILL_ATTENDANCE, 결석 - WILL_ABSENT ✔️
  * boardingOrder: 999 고정 사용
  */
+
+const ATTENDANCE_STATUS = [
+  { label: '출석', value: 'WILL_ATTENDANCE' },
+  { label: '결석', value: 'WILL_ABSENT' },
+];
 
 export const VerificationPage = () => {
   const location = useLocation();
@@ -68,7 +73,7 @@ export const VerificationPage = () => {
             </div>
             <Dropdown
               label='출결 선택'
-              items={['todo', 'api', '연동']}
+              items={ATTENDANCE_STATUS.map(status => status.label)}
               selectedItem={value}
               onSelect={setValue}
             />
