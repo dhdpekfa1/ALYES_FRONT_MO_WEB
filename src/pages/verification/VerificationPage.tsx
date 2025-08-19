@@ -2,53 +2,41 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import dayjs from 'dayjs';
+// import dayjs from 'dayjs';
 import { Button, Dropdown } from '@/shared/ui';
 import { formatWeekdaysKo } from '@/shared/lib';
-import { useToast } from '@/shared/model/hooks';
-import {
-  useGetLessonSearch,
-  usePostShuttleAttendance,
-} from '@/entities/student/api';
-import type { TPostShuttleAttendanceRequest } from '@/entities/student/api';
+import { KOR_TO_EN_ATTENDANCE_STATUS_MAP as KOR_TO_STATUS } from '@/shared/model';
+import { useGetLessonSearch } from '@/entities/student/api';
+import { useAttendance } from '@/entities/student/model/hooks';
 import {
   shuttleAttendanceFormSchema,
   type AttendanceFormValues,
 } from '@/entities/student/model';
 
-/**
- * shuttleAttendance가 빈 배열일 경우  id: null - 생성
- * shuttleAttendance가 있을 경우      해당 id 값 - 수정
- *
- * status: 출석 - WILL_ATTENDANCE, 결석 - WILL_ABSENT ✔️
- * boardingOrder: 999 고정 사용
- */
-
-const ATTENDANCE_STATUS = [
-  { label: '출석', value: 'WILL_ATTENDANCE' },
-  { label: '결석', value: 'WILL_ABSENT' },
-] as const;
-
-const labelFromValue = (v?: string) =>
-  ATTENDANCE_STATUS.find(s => s.value === v)?.label ?? '';
-const valueFromLabel = (label: string) =>
-  ATTENDANCE_STATUS.find(s => s.label === label)?.value ?? undefined;
+const ITEMS = Object.keys(KOR_TO_STATUS);
+const STATUS_TO_KOR = Object.fromEntries(
+  Object.entries(KOR_TO_STATUS).map(([kor, en]) => [en, kor]),
+) as Record<string, string>;
 
 export const VerificationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
+
   const { studentId, studentName } = location.state as {
     studentId: number;
     studentName: string;
   };
-  const { mutate: postShuttleAttendance, isPending } =
-    usePostShuttleAttendance();
 
-  const today = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
+  const today = '2025-08-18';
+  // const today = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
 
   const { data } = useGetLessonSearch(studentId, today);
   const lessons = useMemo(() => data?.result ?? [], [data?.result]);
+  const { defaults, submit, isPending } = useAttendance(
+    studentId,
+    today,
+    lessons,
+  );
 
   const {
     control,
@@ -69,113 +57,17 @@ export const VerificationPage = () => {
     const key = `${studentId}-${today}`;
     if (bootKeyRef.current === key) return;
 
-    const defaults: AttendanceFormValues['items'] = lessons.flatMap(lesson => {
-      const existed = lesson.shuttleAttendance?.[0];
-
-      const lessonId = lesson.lessonStudent?.lessonId ?? lesson.lesson?.id;
-      const lessonStudentId = lesson.lessonStudent?.id;
-      const lessonScheduleId = lesson.lessonSchedule?.id;
-      const lessonStudentDetailId = lesson.lessonStudentDetail?.id;
-
-      if (
-        lessonId == null ||
-        lessonStudentId == null ||
-        lessonScheduleId == null ||
-        lessonStudentDetailId == null
-      ) {
-        return [];
-      }
-
-      return [
-        {
-          id: existed?.id ?? null,
-          type: lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
-          studentId,
-          lessonId,
-          lessonStudentId,
-          lessonScheduleId,
-          lessonStudentDetailId,
-          time: today,
-          status: existed?.status,
-          boardingOrder: 999,
-        },
-      ];
-    });
-
     reset({ items: defaults });
     bootKeyRef.current = key;
-  }, [lessons, reset, studentId, today]);
+  }, [lessons, reset, studentId, today, defaults]);
 
   const onSubmit = (values: AttendanceFormValues) => {
-    const baseItems: AttendanceFormValues['items'] = lessons.flatMap(
-      (lesson, index) => {
-        const existed = lesson.shuttleAttendance?.[0];
-        const lessonId = lesson.lessonStudent?.lessonId ?? lesson.lesson?.id;
-        const lessonStudentId = lesson.lessonStudent?.id;
-        const lessonScheduleId = lesson.lessonSchedule?.id;
-        const lessonStudentDetailId = lesson.lessonStudentDetail?.id;
-        if (
-          lessonId == null ||
-          lessonStudentId == null ||
-          lessonScheduleId == null ||
-          lessonStudentDetailId == null
-        )
-          return [];
-
-        return [
-          {
-            id: existed?.id ?? null,
-            type: lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
-            studentId,
-            lessonId,
-            lessonStudentId,
-            lessonScheduleId,
-            lessonStudentDetailId,
-            time: today,
-            status: values.items?.[index]?.status ?? existed?.status,
-            boardingOrder: 999,
-          },
-        ];
-      },
-    );
-
-    const hasUnselected = baseItems.some(item => !item.status);
-    if (hasUnselected) {
-      toast({
-        variant: 'destructive',
-        title: '모든 수업을 선택해주세요',
-        description: '각 수업의 출결 상태를 모두 선택해주세요.',
-      });
-      return;
-    }
-
-    const payload = baseItems.map(item => ({
-      id: item.id ?? null,
-      type: item.type,
-      studentId: item.studentId,
-      lessonId: item.lessonId,
-      lessonStudentId: item.lessonStudentId,
-      lessonScheduleId: item.lessonScheduleId,
-      lessonStudentDetailId: item.lessonStudentDetailId,
-      time: item.time,
-      status: item.status!,
-      boardingOrder: 999,
-    })) as TPostShuttleAttendanceRequest;
-    postShuttleAttendance(payload, {
+    submit(values.items, {
       onSuccess: () => {
-        toast({
-          title: '전송 성공',
-          description: '출결 사전 확인을 전송했습니다.',
-        });
         sessionStorage.setItem('currentStep', '2');
         navigate('/confirmation');
       },
       onError: () => {
-        toast({
-          variant: 'destructive',
-          title: '출결 사전 확인 전송에 실패했습니다.',
-          description: '다시 시도해주세요.',
-        });
         return;
       },
     });
@@ -239,10 +131,14 @@ export const VerificationPage = () => {
                     render={({ field }) => (
                       <Dropdown
                         label='출결 선택'
-                        items={ATTENDANCE_STATUS.map(s => s.label)}
-                        selectedItem={labelFromValue(field.value)}
+                        items={ITEMS}
+                        selectedItem={
+                          field.value ? STATUS_TO_KOR[field.value] : ''
+                        }
                         onSelect={label =>
-                          field.onChange(valueFromLabel(label))
+                          field.onChange(
+                            (KOR_TO_STATUS as Record<string, string>)[label],
+                          )
                         }
                       />
                     )}

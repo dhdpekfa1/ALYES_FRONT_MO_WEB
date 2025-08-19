@@ -17,3 +17,8 @@ export const EN_TO_KOR_DAY_MAP: Record<string, string> = {
   SAT: '토',
   SUN: '일',
 };
+
+export const KOR_TO_EN_ATTENDANCE_STATUS_MAP = {
+  출석: 'WILL_ATTENDANCE',
+  결석: 'WILL_ABSENT',
+} as const;
