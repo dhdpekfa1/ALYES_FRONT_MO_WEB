@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/shared/model/hooks';
 import type { AttendanceFormValues } from '@/entities/student/model';
 import {
@@ -6,7 +7,10 @@ import {
   type TGetLessonTeacherResponse,
   usePostShuttleAttendance,
 } from '@/entities/student/api';
-import { useQueryClient } from '@tanstack/react-query';
+import type {
+  TShuttleAttendanceStatusEnum,
+  TShuttleAttendances,
+} from '@/shared/api/model';
 
 type LessonItem = TGetLessonTeacherResponse['result'][number];
 
@@ -32,6 +36,46 @@ const ensureIds = (lesson: LessonItem) => {
   } as const;
 };
 
+const getLastShuttle = (lesson: LessonItem) =>
+  (lesson.shuttleAttendance?.length ?? 0) > 0
+    ? lesson.shuttleAttendance![lesson.shuttleAttendance!.length - 1]
+    : undefined;
+
+type ShuttleAttendanceUpsert = Omit<
+  TShuttleAttendances,
+  'createdDate' | 'modifiedDate' | 'status'
+> & {
+  id?: number;
+  status?: TShuttleAttendanceStatusEnum;
+};
+
+const buildItem = (
+  lesson: LessonItem,
+  ids: ReturnType<typeof ensureIds>,
+  date: string,
+  studentId: number,
+  status: TShuttleAttendanceStatusEnum | undefined,
+  existedId?: number,
+) => {
+  if (!ids) {
+    throw new Error('수업 정보가 올바르지 않습니다.');
+  }
+
+  const base: Omit<ShuttleAttendanceUpsert, 'id'> = {
+    type: lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
+    studentId,
+    lessonId: ids.lessonId,
+    lessonStudentId: ids.lessonStudentId,
+    lessonScheduleId: ids.lessonScheduleId,
+    lessonStudentDetailId: ids.lessonStudentDetailId,
+    time: date,
+    boardingOrder: BOARDING_ORDER_DEFAULT,
+    ...(status ? { status } : {}),
+  };
+
+  return existedId != null ? { id: existedId, ...base } : { ...base };
+};
+
 export const useAttendance = (
   studentId: number,
   date: string,
@@ -44,25 +88,11 @@ export const useAttendance = (
 
   const defaults = useMemo<AttendanceFormValues['items']>(() => {
     return lessons.flatMap(lesson => {
-      const existed =
-        (lesson.shuttleAttendance?.length ?? 0) > 0
-          ? lesson.shuttleAttendance![lesson.shuttleAttendance!.length - 1]
-          : undefined;
+      const existed = getLastShuttle(lesson);
       const ids = ensureIds(lesson);
       if (!ids) return [];
       return [
-        {
-          id: existed?.id ?? null,
-          type: lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
-          studentId,
-          lessonId: ids.lessonId,
-          lessonStudentId: ids.lessonStudentId,
-          lessonScheduleId: ids.lessonScheduleId,
-          lessonStudentDetailId: ids.lessonStudentDetailId,
-          time: date,
-          status: existed?.status,
-          boardingOrder: BOARDING_ORDER_DEFAULT,
-        },
+        buildItem(lesson, ids, date, studentId, existed?.status, existed?.id),
       ];
     });
   }, [lessons, studentId, date]);
@@ -70,33 +100,35 @@ export const useAttendance = (
   const toRequest = useCallback(
     (
       formItems: AttendanceFormValues['items'],
-    ): { payload: TPostShuttleAttendanceRequest; hasUnselected: boolean } => {
+    ): {
+      payload: TPostShuttleAttendanceRequest;
+      hasUnselected: boolean;
+      hasChanged: boolean;
+    } => {
       let hasUnselected = false;
+      let hasChanged = true;
       const payload = lessons.flatMap((lesson, index) => {
-        const existed =
-          (lesson.shuttleAttendance?.length ?? 0) > 0
-            ? lesson.shuttleAttendance![lesson.shuttleAttendance!.length - 1]
-            : undefined;
+        const existed = getLastShuttle(lesson);
         const ids = ensureIds(lesson);
         if (!ids) return [];
-        const status = formItems?.[index]?.status ?? existed?.status;
-        if (!status) hasUnselected = true;
+        const chosen = formItems?.[index]?.status;
+        const effective: TShuttleAttendanceStatusEnum | undefined =
+          chosen ?? existed?.status;
+        if (!effective) hasUnselected = true;
+        if (hasChanged && chosen && chosen !== existed?.status)
+          hasChanged = false;
         return [
-          {
-            id: existed?.id ?? null,
-            type: lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
+          buildItem(
+            lesson,
+            ids,
+            date,
             studentId,
-            lessonId: ids.lessonId,
-            lessonStudentId: ids.lessonStudentId,
-            lessonScheduleId: ids.lessonScheduleId,
-            lessonStudentDetailId: ids.lessonStudentDetailId,
-            time: date,
-            status: status!,
-            boardingOrder: BOARDING_ORDER_DEFAULT,
-          },
+            effective!,
+            existed?.id ?? undefined,
+          ),
         ];
       }) as TPostShuttleAttendanceRequest;
-      return { payload, hasUnselected };
+      return { payload, hasUnselected, hasChanged };
     },
     [lessons, studentId, date],
   );
@@ -105,12 +137,19 @@ export const useAttendance = (
     formItems: AttendanceFormValues['items'],
     options?: Parameters<typeof mutate>[1],
   ) => {
-    const { payload, hasUnselected } = toRequest(formItems);
+    const { payload, hasUnselected, hasChanged } = toRequest(formItems);
     if (hasUnselected) {
       toast({
         variant: 'destructive',
         title: '모든 수업을 선택해주세요',
         description: '각 수업의 출결 상태를 모두 선택해주세요.',
+      });
+      return;
+    }
+    if (hasChanged) {
+      toast({
+        title: '변경 사항이 없습니다.',
+        description: '이미 등록된 출결 상태입니다.',
       });
       return;
     }

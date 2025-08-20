@@ -165,6 +165,6 @@ export const shuttleAttendance = z.object({
   lessonStudentDetailId: z.number(),
   time: z.string(),
   status: shuttleAttendanceStatusEnumSchema,
-  boardingOrder: z.number().nullable(),
+  boardingOrder: z.number(),
 });
 export type TShuttleAttendances = z.infer<typeof shuttleAttendance>;

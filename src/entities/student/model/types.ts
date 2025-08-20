@@ -14,7 +14,7 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 
 /** 출석 확인 단일 항목 */
 export const shuttleAttendanceItemSchema = z.object({
-  id: z.number().nullable(),
+  id: z.number().optional(),
   type: shuttleUsageEnumSchema,
   studentId: z.number(),
   lessonId: z.number(),

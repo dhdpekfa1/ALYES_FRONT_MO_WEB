@@ -50,4 +50,5 @@ export type {
   TShuttleAttendanceStatusEnum,
   TStudentType,
   TLessonSchedule,
+  TShuttleAttendances,
 } from './commonTypes';
