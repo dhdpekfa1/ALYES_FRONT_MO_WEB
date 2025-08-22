@@ -7,7 +7,6 @@ export const ConfirmationPage = () => {
   const navigate = useNavigate();
 
   const onPressButton = () => {
-    console.log('TODO: 이벤트 구현');
     if (window.history.length > 1) navigate(-1);
     else navigate('/');
   };
