@@ -4,7 +4,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import dayjs from 'dayjs';
 import { Button, Dropdown } from '@/shared/ui';
-import { formatWeekdaysKo } from '@/shared/lib';
+import { formatWeekdaysKo, formatEnumDay } from '@/shared/lib';
 import { KOR_TO_EN_ATTENDANCE_STATUS_MAP as KOR_TO_STATUS } from '@/shared/model';
 import { useGetLessonSearch } from '@/entities/student/api';
 import { useAttendance } from '@/entities/student/model/hooks';
@@ -31,10 +31,26 @@ export const VerificationPage = () => {
 
   const { data } = useGetLessonSearch(studentId, today);
   const lessons = useMemo(() => data?.result ?? [], [data?.result]);
+
+  const now = dayjs();
+  const todayEnum = formatEnumDay(now);
+  const tomorrowEnum = formatEnumDay(now.add(1, 'day'));
+  const nowHHmm = now.format('HH:mm');
+
+  // 내일은 전부 노출, 오늘은 startTime < 현재시간 제외
+  const filteredLessons = useMemo(() => {
+    return lessons.filter(lesson => {
+      const dayEnum = lesson.lessonSchedule.scheduleDay;
+      const start = lesson.lessonSchedule.startTime;
+      if (dayEnum === tomorrowEnum) return true;
+      if (dayEnum === todayEnum) return start >= nowHHmm;
+      return false;
+    });
+  }, [lessons, todayEnum, tomorrowEnum, nowHHmm]);
   const { defaults, submit, isPending } = useAttendance(
     studentId,
     today,
-    lessons,
+    filteredLessons,
   );
 
   const {
@@ -52,14 +68,14 @@ export const VerificationPage = () => {
   const lastResetLessonsRef = useRef<string>('');
 
   useEffect(() => {
-    if (lessons.length > 0) {
-      const lessonsJSON = JSON.stringify(lessons);
+    if (filteredLessons.length > 0) {
+      const lessonsJSON = JSON.stringify(filteredLessons);
       if (lastResetLessonsRef.current !== lessonsJSON) {
         reset({ items: defaults });
         lastResetLessonsRef.current = lessonsJSON;
       }
     }
-  }, [lessons, defaults, reset]);
+  }, [filteredLessons, defaults, reset]);
 
   const onSubmit = (values: AttendanceFormValues) => {
     submit(values.items, {
@@ -72,8 +88,6 @@ export const VerificationPage = () => {
       },
     });
   };
-
-  console.log(Date.now() + 60 * 1000);
 
   return (
     <div className='min-h-dvh w-full flex flex-col justify-between lg:justify-center'>
@@ -100,10 +114,10 @@ export const VerificationPage = () => {
           </div>
         </div>
 
-        {lessons.length ? (
+        {filteredLessons.length ? (
           <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-4'>
             {fields.map((field, index) => {
-              const lesson = lessons[index];
+              const lesson = filteredLessons[index];
               return (
                 <div
                   key={field.id}
