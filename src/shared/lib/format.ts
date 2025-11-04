@@ -62,3 +62,23 @@ export const filterLessonsByTodayAndTomorrow = <
     );
   });
 };
+
+/**
+ * 수업의 실제 수강일 계산
+ * scheduleDay가 오늘이면 오늘 날짜, 내일이면 내일 날짜 반환
+ */
+export const getLessonDate = (
+  scheduleDay: string,
+  todayEnum: string,
+  tomorrowEnum: string,
+  todayDate: string,
+): string => {
+  if (scheduleDay === todayEnum) {
+    return todayDate;
+  }
+  if (scheduleDay === tomorrowEnum) {
+    return dayjs(todayDate).add(1, 'day').format('YYYY-MM-DD');
+  }
+
+  return todayDate;
+};

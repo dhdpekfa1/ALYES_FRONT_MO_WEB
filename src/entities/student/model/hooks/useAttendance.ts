@@ -1,7 +1,9 @@
 import { useMemo, useCallback } from 'react';
+import dayjs from 'dayjs';
 import { useToast } from '@/shared/model/hooks';
 import type { AttendanceFormValues } from '@/entities/student/model';
 import type { TShuttleAttendanceItem } from '@/entities/student/model/types';
+import { formatEnumDay, getLessonDate } from '@/shared/lib';
 import {
   type TPostShuttleAttendanceRequest,
   type TGetLessonTeacherResponse,
@@ -61,7 +63,9 @@ const getLatestByType = (
 const buildItem = (
   lesson: LessonItem,
   ids: ReturnType<typeof ensureIds>,
-  date: string,
+  todayDate: string,
+  todayEnum: string,
+  tomorrowEnum: string,
   studentId: number,
   status: TShuttleAttendanceStatusEnum | undefined,
   existedId?: number,
@@ -71,6 +75,13 @@ const buildItem = (
     throw new Error('수업 정보가 올바르지 않습니다.');
   }
 
+  const lessonDate = getLessonDate(
+    lesson.lessonSchedule.scheduleDay,
+    todayEnum,
+    tomorrowEnum,
+    todayDate,
+  );
+
   const base = {
     type: overrideType ?? lesson.lessonStudentDetail?.shuttleUsage ?? 'NONE',
     studentId,
@@ -78,7 +89,7 @@ const buildItem = (
     lessonStudentId: ids.lessonStudentId,
     lessonScheduleId: ids.lessonScheduleId,
     lessonStudentDetailId: ids.lessonStudentDetailId,
-    time: date,
+    time: lessonDate,
     boardingOrder: BOARDING_ORDER_DEFAULT,
     ...(status ? { status } : {}),
   } satisfies Omit<TShuttleAttendanceItem, 'id'>;
@@ -95,6 +106,9 @@ export const useAttendance = (
   const { mutate, isPending, isError, isSuccess, data } =
     usePostShuttleAttendance();
 
+  const todayEnum = formatEnumDay(dayjs());
+  const tomorrowEnum = formatEnumDay(dayjs().add(1, 'day'));
+
   const defaults = useMemo<AttendanceFormValues['items']>(() => {
     return lessons.flatMap(lesson => {
       const existed = getLastShuttle(lesson);
@@ -105,13 +119,15 @@ export const useAttendance = (
           lesson,
           ids,
           date,
+          todayEnum,
+          tomorrowEnum,
           studentId,
           existed?.status ?? undefined,
           existed?.id,
         ),
       ];
     });
-  }, [lessons, studentId, date]);
+  }, [lessons, studentId, date, todayEnum, tomorrowEnum]);
 
   const toRequest = useCallback(
     (
@@ -142,6 +158,8 @@ export const useAttendance = (
               lesson,
               ids,
               date,
+              todayEnum,
+              tomorrowEnum,
               studentId,
               effective!,
               pair.BOARDING?.id,
@@ -151,6 +169,8 @@ export const useAttendance = (
               lesson,
               ids,
               date,
+              todayEnum,
+              tomorrowEnum,
               studentId,
               effective!,
               pair.DROP?.id,
@@ -164,6 +184,8 @@ export const useAttendance = (
             lesson,
             ids,
             date,
+            todayEnum,
+            tomorrowEnum,
             studentId,
             effective!,
             latest?.id ?? undefined,
@@ -172,7 +194,7 @@ export const useAttendance = (
       }) as TPostShuttleAttendanceRequest;
       return { payload, hasUnselected, hasChanged };
     },
-    [lessons, studentId, date],
+    [lessons, studentId, date, todayEnum, tomorrowEnum],
   );
 
   const submit = (
