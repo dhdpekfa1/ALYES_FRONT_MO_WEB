@@ -5,4 +5,5 @@ export {
   formatPhoneNumber,
   removeHyphens,
   filterLessonsByTodayAndTomorrow,
+  getLessonDate,
 } from './format';
